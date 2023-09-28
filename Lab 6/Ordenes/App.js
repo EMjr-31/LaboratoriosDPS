@@ -8,17 +8,20 @@ export default function App() {
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
   const [reservations, setReservations] = useState([]);
 
-  // Función para obtener las reservaciones desde AsyncStorage
   const obtenerReservaciones = async () => {
-    try {
-      const keys = await AsyncStorage.getAllKeys();
-      const values = await AsyncStorage.multiGet(keys);
-      const reservas = values.map((value) => JSON.parse(value[1]));
-      setReservations(reservas);
-    } catch (error) {
-      console.error('Error al obtener las reservaciones:', error);
-    }
-  };
+  try {
+    const keys = await AsyncStorage.getAllKeys();
+    const reservas = await AsyncStorage.multiGet(keys);
+
+    // Mapear las reservaciones a objetos
+    const reservaciones = reservas.map(([key, value]) => JSON.parse(value));
+
+    setReservations(reservaciones);
+  } catch (error) {
+    console.error('Error al obtener las reservaciones:', error);
+  }
+};
+
 
   // Llama a obtenerReservaciones cuando se monta el componente
   useEffect(() => {
@@ -27,6 +30,7 @@ export default function App() {
 
   const mostrarForm = () => {
     setMostrarFormulario(true);
+    
   };
 
   const ocultarForm = () => {
@@ -35,26 +39,26 @@ export default function App() {
   };
 
   // Función para eliminar una reserva por su ID
-  const eliminarReserva = async (id) => {
-    try {
-      // Obtener todas las reservaciones actuales
-      const reservasActuales = [...reservations];
+const eliminarReserva = async (id) => {
+  try {
+    // Obtener todas las reservaciones actuales
+    const keys = await AsyncStorage.getAllKeys();
+    
+    // Filtrar las claves para encontrar la clave de la reserva a eliminar
+    const reservaKey = keys.find((key) => key.includes(`Reservacion_${id}`));
 
-      // Encontrar el índice de la reserva que coincida con el ID
-      const indiceReserva = reservasActuales.findIndex((reserva) => reserva.id === id);
-
-      // Si se encuentra la reserva, eliminarla
-      if (indiceReserva !== -1) {
-        reservasActuales.splice(indiceReserva, 1);
-
-        // Actualizar el estado y AsyncStorage
-        setReservations(reservasActuales);
-        await AsyncStorage.removeItem(id);
-      }
-    } catch (error) {
-      console.error('Error al eliminar la reserva:', error);
+    if (reservaKey) {
+      // Eliminar la reserva utilizando su clave
+      await AsyncStorage.removeItem(reservaKey);
+      
+      // Actualizar la lista de reservaciones en el estado
+      const nuevasReservaciones = reservations.filter((reserva) => reserva.id !== id);
+      setReservations(nuevasReservaciones);
     }
-  };
+  } catch (error) {
+    console.error('Error al eliminar la reserva:', error);
+  }
+};
 
   return (
     <>
